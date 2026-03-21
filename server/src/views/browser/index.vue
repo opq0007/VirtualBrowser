@@ -1640,8 +1640,9 @@ export default {
         const result = await chromeSend('launchBrowser', row.id.toString())
         console.log('浏览器启动成功:', result)
 
-        // 更新运行状态
-        row.status = 'running'
+        // 同步最新运行状态
+        await updateRuningState()
+
         this.$notify({
           title: '启动成功',
           message: `浏览器 "${row.name}" 已启动`,
@@ -1668,9 +1669,9 @@ export default {
         const result = await chromeSend('stopBrowser', row.id.toString())
         console.log('浏览器停止成功:', result)
 
-        // 更新运行状态
-        row.isRunning = false
-        row.status = 'stopped'
+        // 同步最新运行状态
+        await updateRuningState()
+
         this.$notify({
           title: '停止成功',
           message: `浏览器 "${row.name}" 已停止`,

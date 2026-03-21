@@ -1,114 +1,113 @@
 @echo off
-chcp 65001 >nul
-echo ╔═══════════════════════════════════════════════════════════════╗
-echo ║     VirtualBrowser Launcher                                   ║
-echo ║     for fingerprint-chromium (ungoogled-chromium)             ║
-echo ╚═══════════════════════════════════════════════════════════════╝
+echo ================================================================
+echo     VirtualBrowser Launcher                                   
+echo     for fingerprint-chromium (ungoogled-chromium)             
+echo ================================================================
 echo.
 
-:: 检查Python
+REM Check Python
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [错误] 未找到Python，请先安装Python 3.8+
+    echo [Error] Python not found, please install Python 3.8+
     pause
     exit /b 1
 )
 
-:: 检查依赖
-echo [1/4] 检查依赖...
+REM Check dependencies
+echo [1/4] Checking dependencies...
 pip show flask >nul 2>&1
 if errorlevel 1 (
-    echo 正在安装 Flask...
+    echo Installing Flask...
     pip install flask flask-cors
     if errorlevel 1 (
-        echo [错误] 安装依赖失败
+        echo [Error] Failed to install dependencies
         pause
         exit /b 1
     )
 )
 
-:: 设置环境变量
-echo [2/4] 配置环境...
+REM Set environment variables
+echo [2/4] Configuring environment...
 
-:: 检测 chromium 路径（按优先级）
+REM Detect chromium path (by priority)
 set "CHROMIUM_PATH="
 
-:: 1. 检查环境变量
+REM 1. Check environment variable
 if defined CHROMIUM_PATH (
     if exist "%CHROMIUM_PATH%" (
-        echo 使用环境变量 CHROMIUM_PATH
+        echo Using environment variable CHROMIUM_PATH
         goto :found_chromium
     )
 )
 
-:: 2. 检查 launcher 子目录
+REM 2. Check launcher subdirectory
 set "TEST_PATH=%~dp0fingerprint-chromium\chrome.exe"
 if exist "%TEST_PATH%" (
     set "CHROMIUM_PATH=%TEST_PATH%"
-    echo 找到 chromium: launcher/fingerprint-chromium/
+    echo Found chromium: launcher/fingerprint-chromium/
     goto :found_chromium
 )
 
-:: 3. 检查 C 盘
+REM 3. Check C drive
 set "TEST_PATH=C:\fingerprint-chromium\chrome.exe"
 if exist "%TEST_PATH%" (
     set "CHROMIUM_PATH=%TEST_PATH%"
-    echo 找到 chromium: C:\fingerprint-chromium\
+    echo Found chromium: C:\fingerprint-chromium\
     goto :found_chromium
 )
 
-:: 4. 检查 D 盘
+REM 4. Check D drive
 set "TEST_PATH=D:\fingerprint-chromium\chrome.exe"
 if exist "%TEST_PATH%" (
     set "CHROMIUM_PATH=%TEST_PATH%"
-    echo 找到 chromium: D:\fingerprint-chromium\
+    echo Found chromium: D:\fingerprint-chromium\
     goto :found_chromium
 )
 
 :found_chromium
 
 if not defined CHROMIUM_PATH (
-    echo [警告] 未找到 fingerprint-chromium
+    echo [Warning] fingerprint-chromium not found
     echo.
-    echo 请下载并解压到以下位置之一：
-    echo   - %~dp0fingerprint-chromium\  (推荐)
+    echo Please download and extract to one of these locations:
+    echo   - %~dp0fingerprint-chromium\  (Recommended)
     echo   - C:\fingerprint-chromium\
     echo   - D:\fingerprint-chromium\
     echo.
-    echo 下载地址: https://github.com/adryfish/fingerprint-chromium/releases
+    echo Download: https://github.com/adryfish/fingerprint-chromium/releases
     echo.
-    echo 或设置环境变量:
-    echo   set CHROMIUM_PATH=你的浏览器路径
+    echo Or set environment variable:
+    echo   set CHROMIUM_PATH=your_browser_path
     echo.
     set "CHROMIUM_PATH=%~dp0fingerprint-chromium\chrome.exe"
 )
 
-:: 设置数据目录和端口
+REM Set data directory and port
 set "DATA_DIR=%~dp0profiles"
 set "PORT=9528"
 
-:: 创建数据目录
+REM Create data directory
 if not exist "%DATA_DIR%" (
-    echo [3/4] 创建数据目录...
+    echo [3/4] Creating data directory...
     mkdir "%DATA_DIR%"
 ) else (
-    echo [3/4] 数据目录已存在
+    echo [3/4] Data directory already exists
 )
 
-:: 显示配置
-echo [4/4] 启动配置:
-echo   浏览器路径: %CHROMIUM_PATH%
-echo   数据目录:   %DATA_DIR%
-echo   API端口:    %PORT%
+REM Display configuration
+echo [4/4] Startup configuration:
+echo   Browser path: %CHROMIUM_PATH%
+echo   Data directory: %DATA_DIR%
+echo   API port: %PORT%
 echo.
 
-:: 启动服务
+REM Start service
 cd /d %~dp0
-echo 正在启动 Launcher 服务...
-echo 管理界面: http://localhost:9527 (需单独启动)
-echo API地址:  http://localhost:%PORT%
+echo Starting Launcher service...
+echo Management UI: http://localhost:9527 (needs to be started separately)
+echo API address:  http://localhost:%PORT%
 echo.
-echo 按 Ctrl+C 停止服务
+echo Press Ctrl+C to stop service
 echo.
 
 python launcher.py

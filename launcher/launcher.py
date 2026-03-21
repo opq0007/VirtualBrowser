@@ -9,6 +9,7 @@ VirtualBrowser Launcher - fingerprint-chromium 适配器
 """
 
 import os
+import sys
 import json
 import subprocess
 import asyncio
@@ -24,6 +25,19 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
+# 设置控制台输出编码为 UTF-8，避免 UnicodeEncodeError
+if platform.system() == 'Windows':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except:
+        # 如果 reconfigure 不可用，尝试使用 setlocale
+        import locale
+        try:
+            locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+        except:
+            pass
 
 app = Flask(__name__)
 CORS(app)
@@ -698,7 +712,7 @@ def launch_browser():
     """启动浏览器"""
     try:
         data = request.json
-        print(f'[DEBUG] 接收到的配置数据: {json.dumps(data, indent=2, ensure_ascii=False)}')
+        print(f'[DEBUG] 接收到的配置数据: {json.dumps(data, indent=2, ensure_ascii=True)}')
         
         config = convert_config(data)
         print(f'[DEBUG] 转换后的代理配置: mode={config.proxy_mode}, protocol={config.proxy_protocol}, host={config.proxy_host}, port={config.proxy_port}, user={config.proxy_user}, pass={"***" if config.proxy_pass else ""}')
