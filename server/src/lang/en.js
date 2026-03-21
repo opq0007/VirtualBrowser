@@ -150,7 +150,15 @@ export default {
     success: 'Success',
     create: 'Create',
     update: 'Update',
-    delete_confirm: 'Are you sure to delete ${name} ?'
+    delete_confirm: 'Are you sure to delete ${name} ?',
+    status: 'Status',
+    running: 'Running',
+    stopped: 'Stopped',
+    debug_port: 'Debug Port',
+    remark: 'Remark',
+    name_prefix: 'Name Prefix',
+    remark_prefix: 'Remark Prefix',
+    start_number: 'Start Number'
   },
   group: {
     add: 'Create Group',

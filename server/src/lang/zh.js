@@ -152,7 +152,15 @@ export default {
     success: '成功',
     create: '创建',
     update: '更新',
-    delete_confirm: '确定删除 ${name} 吗？'
+    delete_confirm: '确定删除 ${name} 吗？',
+    status: '状态',
+    running: '运行中',
+    stopped: '已停止',
+    debug_port: '调试端口',
+    remark: '备注',
+    name_prefix: '名称前缀',
+    remark_prefix: '备注前缀',
+    start_number: '起始序号'
   },
   group: {
     add: '添加分组',

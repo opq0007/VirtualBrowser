@@ -115,6 +115,24 @@
           </span>
         </template>
       </el-table-column>
+      <el-table-column :label="$t('browser.status')" width="100" align="center">
+        <template slot-scope="{ row }">
+          <el-tag v-if="row.isRunning" type="success" size="small" effect="dark">
+            {{ $t('browser.running') }}
+          </el-tag>
+          <el-tag v-else type="info" size="small" effect="plain">
+            {{ $t('browser.stopped') }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column :label="$t('browser.debug_port')" width="110" align="center">
+        <template slot-scope="{ row }">
+          <span v-if="row.isRunning && row.debug_port" style="color: #67C23A; font-weight: bold;">
+            {{ row.debug_port }}
+          </span>
+          <span v-else style="color: #909399;">-</span>
+        </template>
+      </el-table-column>
       <el-table-column
         :label="$t('browser.date')"
         sortable
@@ -670,9 +688,29 @@
       </span>
     </el-dialog>
     <el-dialog :visible.sync="dialogVisible" title="批量创建">
-      <el-form :model="form">
+      <el-form :model="form" label-width="120px">
         <el-form-item label="环境数量">
           <el-input v-model.number="form.numberOfEnvironments" type="number" min="1" />
+        </el-form-item>
+        <el-form-item label="名称前缀">
+          <el-input
+            v-model="form.namePrefix"
+            placeholder="例如：测试环境"
+            style="width: 300px"
+          />
+          <span style="margin-left: 10px; color: #909399; font-size: 12px">
+            最终名称格式：前缀 + 序号（例如：测试环境 1）
+          </span>
+        </el-form-item>
+        <el-form-item label="备注前缀">
+          <el-input
+            v-model="form.remarkPrefix"
+            placeholder="例如：用于自动化测试"
+            style="width: 300px"
+          />
+        </el-form-item>
+        <el-form-item label="起始序号">
+          <el-input-number v-model="form.startNumber" :min="1" />
         </el-form-item>
         <el-form-item label="代理类型">
           <el-select v-model="form.proxyType" placeholder="请选择">
@@ -684,7 +722,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="代理API链接">
-          <el-input v-model="form.proxyAPI" placeholder="请输入" />
+          <el-input v-model="form.proxyAPI" placeholder="自动从API提取不同代理" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -929,6 +967,9 @@ export default {
       },
       form: {
         numberOfEnvironments: 1,
+        namePrefix: '',
+        remarkPrefix: '',
+        startNumber: 1,
         proxyType: '默认',
         proxyAPI: '',
         proxy: {},
@@ -1425,7 +1466,13 @@ export default {
         mac: { mode: 1, value: genRandomMacAddr() },
         dnt: { mode: 1, value: 0 },
         'port-scan': { mode: 1, value: [] },
-        gpu: { mode: 1, value: 1 }
+        gpu: { mode: 1, value: 1 },
+        window_title: {
+          mode: 0,
+          value: ''
+        },
+        remark: '',
+        debug_port: null
       }
     },
     getCurrentTimeZone() {
@@ -1640,12 +1687,17 @@ export default {
         const result = await chromeSend('launchBrowser', row.id.toString())
         console.log('浏览器启动成功:', result)
 
+        // 保存调试端口
+        if (result && result.data && result.data.debug_port) {
+          row.debug_port = result.data.debug_port
+        }
+
         // 同步最新运行状态
         await updateRuningState()
 
         this.$notify({
           title: '启动成功',
-          message: `浏览器 "${row.name}" 已启动`,
+          message: `浏览器 "${row.name}" 已启动 (端口: ${row.debug_port || '未知'})`,
           type: 'success',
           duration: 2000
         })
@@ -1969,8 +2021,25 @@ export default {
         this.$message.error('无效的环境数量')
         return
       }
+
+      const startNumber = this.form.startNumber || 1
+
       for (let i = 0; i < this.form.numberOfEnvironments; i++) {
         const newEnvironmentData = this.getDefaultForm()
+        const sequenceNumber = startNumber + i
+
+        // 设置名称
+        if (this.form.namePrefix) {
+          newEnvironmentData.name = `${this.form.namePrefix} ${sequenceNumber}`
+        } else {
+          newEnvironmentData.name = `浏览器 ${sequenceNumber}`
+        }
+
+        // 设置备注
+        if (this.form.remarkPrefix) {
+          newEnvironmentData.remark = `${this.form.remarkPrefix} #${sequenceNumber}`
+        }
+
         newEnvironmentData.timestamp = Date.now()
         const uaData = this.updateChromeVer(newEnvironmentData.chrome_version)
         newEnvironmentData.ua.value = uaData.ua
@@ -1992,7 +2061,7 @@ export default {
           await addBrowser(newEnvironmentData)
           this.$notify({
             title: this.$t('browser.success'),
-            message: this.$t('browser.create') + this.$t('browser.success'),
+            message: `已创建 "${newEnvironmentData.name}"`,
             type: 'success',
             duration: 2000
           })
@@ -2003,6 +2072,9 @@ export default {
       }
 
       this.form.numberOfEnvironments = 1
+      this.form.namePrefix = ''
+      this.form.remarkPrefix = ''
+      this.form.startNumber = 1
       this.form.proxyType = '默认'
       this.form.proxyAPI = ''
 
